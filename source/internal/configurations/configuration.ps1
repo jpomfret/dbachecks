@@ -329,6 +329,7 @@ Set-PSFConfig -Module dbachecks -Name skip.database.status -Validation bool -Val
 Set-PSFConfig -Module dbachecks -Name skip.database.compatibilitylevel -Validation bool -Value $false -Initialize -Description "Skip the database compatibility test"
 Set-PSFConfig -Module dbachecks -Name skip.database.recoverymodel -Validation bool -Value $false -Initialize -Description "Skip the database recovery model test"
 Set-PSFConfig -Module dbachecks -Name skip.database.pseudosimple -Validation bool -Value $false -Initialize -Description "Skip the database PseudoSimple recovery model test"
+Set-PSFConfig -Module dbachecks -Name skip.database.certificateexpiration -Validation bool -Value $false -Initialize -Description "Skip the database certificate expiration tests"
 
 Set-PSFConfig -Module dbachecks -Name skip.logshiptesting -Validation bool -Value $false -Initialize -Description "Skip the logshipping test"
 
