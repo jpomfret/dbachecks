@@ -135,6 +135,11 @@ function Get-AllDatabaseInfo {
             $compatibilityLevel = $true
             $ConfigValues | Add-Member -MemberType NoteProperty -Name 'compatexclude' -Value ($__dbcconfig | Where-Object Name -EQ 'database.compatibilitylevel.excludedb').Value
         }
+        'CertificateExpiration' {
+            $certs = $true
+            $ConfigValues | Add-Member -MemberType NoteProperty -Name 'certexpireexclude' -Value ($__dbcconfig | Where-Object Name -EQ 'policy.certificateexpiration.excludedb').Value
+            $ConfigValues | Add-Member -MemberType NoteProperty -Name 'certexpiremonths' -Value ($__dbcconfig | Where-Object Name -EQ 'policy.certificateexpiration.warningwindow').Value
+        }
         Default { }
     }
 
@@ -169,6 +174,7 @@ function Get-AllDatabaseInfo {
                 QueryStore                = @(if ($qs) { $psitem.QueryStoreOptions.ActualState })
                 CompatibilityLevel        = @(if ($compatibilitylevel) { $psitem.CompatibilityLevel })
                 ServerLevel               = @(if ($compatibilitylevel) { [Enum]::GetNames('Microsoft.SqlServer.Management.Smo.CompatibilityLevel').Where{ $psitem -match $Instance.VersionMajor } })
+                Certificates              = @(if ($certs) { $psitem.Certificates | Select-Object Name, ExpirationDate })
             }
         }
     }

@@ -322,7 +322,7 @@ Set-PSFConfig -Module dbachecks -Name skip.database.autoupdatestatisticsasynchro
 Set-PSFConfig -Module dbachecks -Name skip.database.trustworthy -Validation bool -Value $false -Initialize -Description "Skip the trustworthy database test"
 Set-PSFConfig -Module dbachecks -Name skip.database.status -Validation bool -Value $false -Initialize -Description "Skip the database status test"
 Set-PSFConfig -Module dbachecks -Name skip.database.compatibilitylevel -Validation bool -Value $false -Initialize -Description "Skip the database compatibility test"
-
+Set-PSFConfig -Module dbachecks -Name skip.database.certificateexpiration -Validation bool -Value $false -Initialize -Description "Skip the database certificate expiration tests"
 
 Set-PSFConfig -Module dbachecks -Name skip.logshiptesting -Validation bool -Value $false -Initialize -Description "Skip the logshipping test"
 
