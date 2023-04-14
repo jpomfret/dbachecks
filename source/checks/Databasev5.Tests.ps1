@@ -274,3 +274,22 @@ Describe "Contained Database SQL Authenticated Users" -Tag ContainedDBSQLAuth, C
         }
     }
 }
+
+Describe "Certificate Expiration" -Tag CertificateExpiration, High, Database -ForEach $InstancesToTest {
+    $Skip = ($__dbcconfig | Where-Object Name -EQ 'skip.database.certificateexpiration').Value
+
+    Context "Encryption certificates should not be expired" {
+        It "Database <_.Name> has no expired certificates on <_.SqlInstance>" -Skip:$skip -ForEach $psitem.Databases.Where{ if ($Database) { $_.Name -in $Database } else { $psitem.ConfigValues.certexpireexclude -notcontains $psitem.Name } } {
+            $psitem.Certificates.Foreach{
+                $psitem.Certificates.ExpirationDate.ToUniversalTime() | Should -BeGreaterThan (Get-Date).ToUniversalTime() -Because "certificates should not be expired"
+            }
+        }
+
+        It "Database <_.Name> has no certificates that will expire within <_.ConfigValues.certexpiremonths> months on <_.SqlInstance>" -Skip:$skip -ForEach $psitem.Databases.Where{ if ($Database) { $_.Name -in $Database } else { $psitem.ConfigValues.certexpireexclude -notcontains $psitem.Name } } {
+            $psitem.Certificates.Foreach{
+                $psitem.Certificates.ExpirationDate.ToUniversalTime() | Should -BeGreaterThan (Get-Date).ToUniversalTime().AddMonths($psitem.ConfigValues.certexpiremonths) -Because "expires inside the warning window of <_.ConfigValues.certexpiremonths> months"
+            }
+        }
+
+    }
+}
