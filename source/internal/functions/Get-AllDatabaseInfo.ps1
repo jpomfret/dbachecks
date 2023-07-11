@@ -194,15 +194,12 @@ function Get-AllDatabaseInfo {
                 QueryStore                = @(if ($qs) { $psitem.QueryStoreOptions.ActualState })
                 CompatibilityLevel        = @(if ($compatibilitylevel) { $psitem.CompatibilityLevel })
                 ServerLevel               = @(if ($compatibilitylevel) { [Enum]::GetNames('Microsoft.SqlServer.Management.Smo.CompatibilityLevel').Where{ $psitem -match $Instance.VersionMajor } })
-<<<<<<< HEAD
                 GuestUserConnect          = @(if ($guestUserConnect) { if ($psitem.EnumDatabasePermissions('guest') | Where-Object { $_.PermissionState -eq 'Grant' -and $_.PermissionType.Connect }) { $true } } )
                 RecoveryModel             = @(if ($pseudoSimple -or $recoverymodel) { $psitem.RecoveryModel })
                 PseudoSimple              = @(if ($pseudoSimple) { '' -eq (($psitem.Query('Select last_log_backup_lsn from sys.database_recovery_status where database_id = DB_ID()')).last_log_backup_lsn) })
                 ContainmentType           = @(if ($containedDbAutoClose -or $containedDbSqlAuthUsers) { $psitem.ContainmentType })
                 ContainedDbAutoClose      = @(if ($containedDbAutoClose) { if (($psItem.ContainmentType -ne "NONE") -and ($null -ne $psItem.ContainmentType) -and $psitem.AutoClose) { $true } else { $false } } )
                 ContainedDbSqlAuthUsers   = @(if ($containedDbSqlAuthUsers) { if ($psItem.ContainmentType -ne "NONE" -and ($null -ne $psItem.ContainmentType)) { ($psitem.Users | Where-Object {$_.LoginType -eq "SqlLogin" -and $_.HasDbAccess -eq $true } | Measure-Object ).Count}} )
-=======
->>>>>>> 625a048b3bb0deeade38793b59e22247bf566a4e
                 Certificates              = @(if ($certs) { $psitem.Certificates | Select-Object Name, ExpirationDate })
             }
         }
