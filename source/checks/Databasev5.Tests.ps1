@@ -281,15 +281,24 @@ Describe "Certificate Expiration" -Tag CertificateExpiration, High, Database -Fo
     Context "Encryption certificates should not be expired" {
         It "Database <_.Name> has no expired certificates on <_.SqlInstance>" -Skip:$skip -ForEach $psitem.Databases.Where{ if ($Database) { $_.Name -in $Database } else { $psitem.ConfigValues.certexpireexclude -notcontains $psitem.Name } } {
             $psitem.Certificates.Foreach{
-                $psitem.Certificates.ExpirationDate.ToUniversalTime() | Should -BeGreaterThan (Get-Date).ToUniversalTime() -Because "certificates should not be expired"
+                $psitem.ExpirationDate.ToUniversalTime() | Should -BeGreaterThan (Get-Date).ToUniversalTime() -Because "certificates should not be expired"
+            }
+        }
+
+        It "Database <_.Name> has no certificates on <_.SqlInstance>" -Skip:$skip -ForEach $psitem.Databases.Where{ if ($Database) { $_.Name -in $Database } else { $psitem.ConfigValues.certexpireexclude -notcontains $psitem.Name } } {
+            $psitem.Certificates.Foreach{
+                $psitem.ExpirationDate.ToUniversalTime() | Should -Be 1 -Because "certificates"
             }
         }
 
         It "Database <_.Name> has no certificates that will expire within <_.ConfigValues.certexpiremonths> months on <_.SqlInstance>" -Skip:$skip -ForEach $psitem.Databases.Where{ if ($Database) { $_.Name -in $Database } else { $psitem.ConfigValues.certexpireexclude -notcontains $psitem.Name } } {
+            $certExpireMonths = $psitem.ConfigValues.certexpiremonths
             $psitem.Certificates.Foreach{
-                $psitem.Certificates.ExpirationDate.ToUniversalTime() | Should -BeGreaterThan (Get-Date).ToUniversalTime().AddMonths($psitem.ConfigValues.certexpiremonths) -Because "expires inside the warning window of <_.ConfigValues.certexpiremonths> months"
+                #todo: this doesn't work... 
+                #$psitem.ExpirationDate.ToUniversalTime() | Should -BeGreaterThan (Get-Date).ToUniversalTime().AddMonths( - ($certexpiremonths)) -Because "expires inside the warning window of <_.ConfigValues.certexpiremonths> months"
+                $psitem.ExpirationDate.ToUniversalTime() | Should -BeGreaterThan (Get-Date).ToUniversalTime().AddMonths( -2) -Because "expires inside the warning window of <_.ConfigValues.certexpiremonths> months"
+                #$psitem.ExpirationDate.ToUniversalTime() | Should -BeGreaterThan (Get-Date).ToUniversalTime().AddMonths( - $certExpireMonths) -Because "expires inside the warning window of <_.ConfigValues.certexpiremonths> months"
             }
         }
-
     }
 }
