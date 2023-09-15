@@ -281,20 +281,20 @@ Describe "Page Verify" -Tag PageVerify, Medium, Database -ForEach $InstancesToTe
     Context "Testing page verify on <_.Name>" {
 
         # handle differently depending on major version - not available at all in SQL 2000. 2005 not available on tempdb.
-        if($psitem.MajorVersion -eq 8) {
+        if ($psitem.MajorVersion -eq 8) {
             It "Database Page verify is not available on SQL 2000 on <_.SqlInstance>" {
                 $true | Should -BeTrue
             }
         } elseif ($psitem.MajorVersion -eq 9) {
             It "Database <_.Name> should have page verify set to <_.ConfigValues.pageverify> on <_.SqlInstance>" -Skip:$skip -ForEach $psitem.Databases.Where{ if ($Database) { $_.Name -in $Database } else { $psitem.ConfigValues.pageverifyexclude -notcontains $psitem.Name } } {
-                if($psitem.Name -ne 'tempdb') {
+                if ($psitem.Name -ne 'tempdb') {
                     $psitem.PageVerify | Should -Be $psitem.ConfigValues.PageVerify -Because "Page verify helps SQL Server to detect corruption"
                 } else {
                     $true | Should -BeTrue
                 }
             }
         } else {
-            It "Database <_.Name> should have page verify set to <_.ConfigValues.pageverify> on <_.SqlInstance>" -Skip:$skip -ForEach $psitem.Databases.Where{ if ($Database) { $_.Name -in $Database } else { $psitem.ConfigValues.pageverifyexclude -notcontains $psitem.Name -and $_.Name -ne 'tempdb'} } {
+            It "Database <_.Name> should have page verify set to <_.ConfigValues.pageverify> on <_.SqlInstance>" -Skip:$skip -ForEach $psitem.Databases.Where{ if ($Database) { $_.Name -in $Database } else { $psitem.ConfigValues.pageverifyexclude -notcontains $psitem.Name -and $_.Name -ne 'tempdb' } } {
                 $psitem.PageVerify | Should -Be $psitem.ConfigValues.PageVerify -Because "Page verify helps SQL Server to detect corruption."
             }
             #tempdb handled like v4
@@ -305,9 +305,9 @@ Describe "Page Verify" -Tag PageVerify, Medium, Database -ForEach $InstancesToTe
     }
 }
 
-Describe  "Foreign keys and check constraints not trusted" -Tag FKCKTrusted, Low, Database -ForEach $InstancesToTest {
+Describe "Foreign keys and check constraints not trusted" -Tag FKCKTrusted, Low, Database -ForEach $InstancesToTest {
     $Skip = ($__dbcconfig | Where-Object Name -EQ 'skip.database.fkcktrusted').Value
-        Context "Testing Foreign Keys and Check Constraints are not trusted  <_.Name>" {
+    Context "Testing Foreign Keys and Check Constraints are not trusted  <_.Name>" {
 
         It "Database <_.Database> Foreign Key <_.Name> on table <_.Parent> should be trusted on <_.SqlInstance>" -Skip:$skip -ForEach $psitem.Databases.Where{ if ($Database) { $_.Name -in $Database } else { $psitem.ConfigValues.fkcktrustedexclude -notcontains $psitem.Name } }.ForeignKeys {
             $psitem.IsChecked | Should -Be $true -Because "This can have a huge performance impact on queries. SQL Server won't use untrusted constraints to build better execution plans. It will also avoid data violation"
@@ -319,3 +319,26 @@ Describe  "Foreign keys and check constraints not trusted" -Tag FKCKTrusted, Low
     }
 }
 
+Describe "Last Full Backup Times" -Tag LastFullBackup, LastBackup, Backup, DISA, Varied, Database -ForEach $InstancesToTest {
+    $Skip = ($__dbcconfig | Where-Object Name -EQ 'skip.database.lastfullbackup').Value
+
+    Context "Testing last full backups on <_.Name>" {
+        It "Database <_.Name> should have full backups less than <_.ConfigValues.maxfull> days old on <_.SqlInstance>" -Skip:$skip -ForEach $psitem.Databases.Where{ ($psitem.CreateDate.ToUniversalTime() -lt (Get-Date).ToUniversalTime().AddHours( - $psitem.ConfigValues.graceperiod)) -and (-not ($psitem.AgLocalReplicaName -eq 'Secondary' -and $psitem.ConfigValues.skipsecondaries)) -and $(if ($Database) { $_.Name -in $Database } else { $psitem.ConfigValues.lastfullbackupexclude -notcontains $psitem.Name }) } {
+        #It "Database <_.Name> should have full backups less than <_.ConfigValues.maxfull> days old on <_.SqlInstance>" -Skip:$skip -ForEach $psitem.Databases.Where{ ($psitem.CreateDate.ToUniversalTime() -lt (Get-Date).ToUniversalTime().AddHours( - $psitem.ConfigValues.graceperiod)) -and (-not ($psitem.AgLocalReplicaName -eq 'Secondary' -and $psitem.ConfigValues.skipsecondaries)) -and (-not ($psitem.Status -match "Offline") -or ($psitem.IsAccessible -eq $false) -or ($psitem.Readonly -eq $true -and $psitem.configvalues.skipreadonly -eq $true)) -and $(if ($Database) { $_.Name -in $Database } else { $psitem.ConfigValues.lastfullbackupexclude -notcontains $psitem.Name }) } {
+            $psitem.LastFullBackup.ToUniversalTime() | Should -BeGreaterThan (Get-Date).ToUniversalTime().AddDays( - ($psitem.ConfigValues.maxFull)) -Because "Taking regular backups is extraordinarily important"
+        }
+    }
+}
+
+
+# skipped on ag secondaries - are now just ignored, rather than showing as skipped
+        # same for offline, IsAccessible -eq $false and read only
+
+<#
+
+need to still test this bit
+
+$skip = ($psitem.Status -match "Offline") -or ($psitem.IsAccessible -eq $false) -or ($psitem.Readonly -eq $true -and $skipreadonly -eq $true)
+
+
+#>

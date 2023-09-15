@@ -164,7 +164,16 @@ function Get-AllDatabaseInfo {
         'FKCKTrusted' {
             $trusted = $true
             $ConfigValues | Add-Member -MemberType NoteProperty -Name 'fkcktrustedexclude' -Value ($__dbcconfig | Where-Object Name -EQ 'policy.database.fkcktrustedexclude').Value
+        }  
+        'LastFullBackup' {
+            $lastFullBackup = $true
+            $ConfigValues | Add-Member -MemberType NoteProperty -Name 'maxfull' -Value ($__dbcconfig | Where-Object Name -EQ 'policy.backup.fullmaxdays').Value
+            $ConfigValues | Add-Member -MemberType NoteProperty -Name 'graceperiod' -Value ($__dbcconfig | Where-Object Name -EQ 'policy.backup.newdbgraceperiod').Value
+            $ConfigValues | Add-Member -MemberType NoteProperty -Name 'skipreadonly' -Value ($__dbcconfig | Where-Object Name -EQ 'skip.backup.readonly').Value
+            $ConfigValues | Add-Member -MemberType NoteProperty -Name 'skipsecondaries' -Value ($__dbcconfig | Where-Object Name -EQ 'skip.backup.secondaries').Value
+            $ConfigValues | Add-Member -MemberType NoteProperty -Name 'lastfullbackupexclude' -Value ($__dbcconfig | Where-Object Name -EQ 'policy.database.lastfullbackupexclude').Value
         }
+
         Default { }
     }
 
@@ -193,7 +202,7 @@ function Get-AllDatabaseInfo {
                 VLF                       = @(if ($vlf) { ($psitem.Query("DBCC LOGINFO") | Measure-Object).Count })
                 LogFileCount              = @(if ($logfilecount) { ($psitem.LogFiles | Measure-Object).Count })
                 Trustworthy               = @(if ($trustworthy) { $psitem.Trustworthy })
-                Status                    = @(if ($status) { $psitem.Status })
+                Status                    = @(if ($status -or $lastFullBackup) { $psitem.Status })
                 IsDatabaseSnapshot        = @(if ($status) { $psitem.IsDatabaseSnapshot }) # needed for status test
                 Readonly                  = @(if ($status) { $psitem.Readonly }) # needed for status test
                 QueryStore                = @(if ($qs) { $psitem.QueryStoreOptions.ActualState })
@@ -206,8 +215,12 @@ function Get-AllDatabaseInfo {
                 ContainedDbAutoClose      = @(if ($containedDbAutoClose) { if (($psItem.ContainmentType -ne "NONE") -and ($null -ne $psItem.ContainmentType) -and $psitem.AutoClose) { $true } else { $false } } )
                 ContainedDbSqlAuthUsers   = @(if ($containedDbSqlAuthUsers) { if ($psItem.ContainmentType -ne "NONE" -and ($null -ne $psItem.ContainmentType)) { ($psitem.Users | Where-Object { $_.LoginType -eq "SqlLogin" -and $_.HasDbAccess -eq $true } | Measure-Object ).Count } } )
                 PageVerify                = @(if ($pageverify) { $psitem.PageVerify })
-                ForeignKeys               = @(if ($trusted) {$psitem.Tables.ForeignKeys | Where-Object {-not $_.NotForReplication} | Select-Object Name, Parent, @{l='Database';e={$_.Parent.Parent.Name}}, IsChecked } )
-                Constraints               = @(if ($trusted) {$psitem.Tables.Checks | Where-Object {(-not $_.NotForReplication) -and $_.IsEnabled} | Select-Object Name, Parent, @{l='Database';e={$_.Parent.Parent.Name}}, IsChecked } )
+                ForeignKeys               = @(if ($trusted) { $psitem.Tables.ForeignKeys | Where-Object { -not $_.NotForReplication } | Select-Object Name, Parent, @{l = 'Database'; e = { $_.Parent.Parent.Name } }, IsChecked } )
+                Constraints               = @(if ($trusted) { $psitem.Tables.Checks | Where-Object { (-not $_.NotForReplication) -and $_.IsEnabled } | Select-Object Name, Parent, @{l = 'Database'; e = { $_.Parent.Parent.Name } }, IsChecked } )
+                LastFullBackup            = @(if ($lastFullBackup) { $psitem.LastBackupDate } )
+                AgLocalReplicaName        = @(if ($lastFullBackup -and $psitem.AvailabilityGroupName) { $psitem.Parent.AvailabilityGroups[$psitem.AvailabilityGroupName].LocalReplicaRole } )
+                CreateDate                = @(if ($lastFullBackup) { $psitem.CreateDate } )
+                IsAccessible              = @(if ($lastFullBackup) { $psitem.IsAccessible } )
             }
         }
     }
